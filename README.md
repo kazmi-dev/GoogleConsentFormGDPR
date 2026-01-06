@@ -6,6 +6,7 @@ Supports:
 - ✅ Consent request using [Google UMP SDK](https://developers.google.com/admob/android/privacy)
 - ✅ Support both Object and Hilt (Two way integration)
 - ✅ Debug mode for testing in EEA
+- ✅ Ad initialization included
 - ✅ Callback support to load ads after consent
 - ✅ Privacy options support
 
@@ -80,10 +81,25 @@ class MyApp : Application()
 ```
 
 ## 📜 Initilization
-Initialize UMP in your activity as below:
+Initialize UMP in your activity as below using DI:
 
 ```initialize
 @Inject latinit var googleConsentFormManager: GoogleConsentFormManager
+```
+
+Initialize UMP in your activity as below using Object:
+
+```initialize
+GoogleConsentManager.initConsentInfo(
+            activity = this,
+            debugMode = true,
+            onAdsInitialized = {
+                //onAdInitialized
+            },
+            onError = {error->
+                //handle error
+            }
+        )
 ```
 
 ### 1. Implement UmpCallbacks in your activity or fragment:
