@@ -85,6 +85,17 @@ Initialize UMP in your activity as below using DI:
 
 ```initialize
 @Inject latinit var googleConsentFormManager: GoogleConsentFormManager
+
+googleConsentFormManager.initConsentInfo(
+            activity = this,
+            debugMode = true,
+            onAdsInitialized = {
+                //onAdInitialized
+            },
+            onError = {error->
+                //handle error
+            }
+        )
 ```
 
 Initialize UMP in your activity as below using Object:
