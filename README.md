@@ -87,30 +87,30 @@ Initialize UMP in your activity as below using DI:
 @Inject latinit var googleConsentFormManager: GoogleConsentFormManager
 
 googleConsentFormManager.initConsentInfo(
-            activity = this,
-            debugMode = true,
-            onAdsInitialized = {
-                //onAdInitialized
-            },
-            onError = {error->
-                //handle error
-            }
-        )
+         activity = this,
+         debugMode = true,
+         onAdsInitialized = {
+            //onAdInitialized
+         },
+         onError = {error->
+            //handle error
+         }
+)
 ```
 
 Initialize UMP in your activity as below using Object:
 
 ```initialize
 GoogleConsentManager.initConsentInfo(
-            activity = this,
-            debugMode = true,
-            onAdsInitialized = {
-                //onAdInitialized
-            },
-            onError = {error->
-                //handle error
-            }
-        )
+        activity = this,
+        debugMode = true,
+        onAdsInitialized = {
+            //onAdInitialized
+        },
+        onError = {error->
+            //handle error
+        }
+)
 ```
 
 ### 1. Implement UmpCallbacks in your activity or fragment:
