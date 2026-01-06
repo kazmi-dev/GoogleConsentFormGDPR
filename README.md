@@ -1,20 +1,20 @@
 # 📜 Google Consent Form GDPR/EEA Implementation
 
-This is a lightweight Kotlin-based utility class to easily implement **Google UMP (User Messaging Platform)** Consent Form for GDPR/EEA compliance in your Android apps.
+This is a Simple callback Kotlin-based utility class to easily implement **Google UMP (User Messaging Platform)** Consent Form for GDPR/EEA compliance in your Android apps.
 
 Supports:
 - ✅ Consent request using [Google UMP SDK](https://developers.google.com/admob/android/privacy)
+- ✅ Support both Object and Hilt (Two way integration)
 - ✅ Debug mode for testing in EEA
 - ✅ Callback support to load ads after consent
 - ✅ Privacy options support
-- ✅ Easy integration with Dagger Hilt
 
 ---
 
 ## 🛠️ Prerequisites
 
 - ✅ User Messaging Platform Dependency
-- ✅ Dagger/Hilt Integration
+- ✅ Dagger/Hilt Integration if using DI
 
 ### 1. 📌 Add UMP dependency in your `libs.versions.toml`:
 
@@ -23,7 +23,7 @@ Supports:
 ump = { group = "com.google.android.ump", name = "user-messaging-platform", version.ref = "ump_version" }
 ```
 
-### 2. 📌 Add Dagger/Hilt support
+### 2. 📌 Add Dagger/Hilt support (only required for DI projects)
 
 Add following depedencies and plugins to `libs.versions.toml`
 
