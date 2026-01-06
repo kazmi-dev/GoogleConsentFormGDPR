@@ -15,7 +15,7 @@ Supports:
 ## 🛠️ Prerequisites
 
 - ✅ User Messaging Platform Dependency
-- ✅ Dagger/Hilt Integration if using DI
+- ✅ Dagger/Hilt Integration (only if using DI)
 
 ### 1. 📌 Add UMP dependency in your `libs.versions.toml`:
 
