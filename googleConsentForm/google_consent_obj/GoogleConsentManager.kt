@@ -62,7 +62,7 @@ object GoogleConsentManager {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
                     if (formError != null) {
                         //handle Error
-                        val errorMessage = formError.message
+                        val errorMessage = "Code: ${formError.errorCode}, Message: ${formError.message}"
                         Log.d(TAG, "initConsentInfo: Consent form Error -> $errorMessage")
                         onError(errorMessage)
                     } else {
@@ -77,7 +77,8 @@ object GoogleConsentManager {
 
             },
             { formError ->  /*handle Error*/
-                Log.d(TAG, "initConsentInfo: Consent info gathered Error -> ${formError.message}.")
+                val error = "Code: ${formError.errorCode}, Message: ${formError.message}"
+                Log.d(TAG, "initConsentInfo: Consent info gathered Error -> $error")
             }
         )
 
@@ -104,5 +105,6 @@ object GoogleConsentManager {
             }
         }
     }
+
 
 }
