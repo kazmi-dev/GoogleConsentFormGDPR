@@ -4,11 +4,17 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.initialization.AdapterStatus
 import com.google.android.ump.ConsentDebugSettings
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,7 +28,10 @@ class GoogleConsentManager@Inject constructor(
     }
 
     private lateinit var consentInfo: ConsentInformation
-    private var shouldCheckCanRequestAds: Boolean = true
+    private val shouldCheckCanRequestAds: AtomicBoolean = AtomicBoolean(true)
+
+    val canRequestAds: Boolean
+        get() = consentInfo.canRequestAds()
 
     /** Helper variable to determine if the privacy options form is required. */
     val isPrivacyOptionsRequired: Boolean
@@ -37,23 +46,23 @@ class GoogleConsentManager@Inject constructor(
         onError: (String) -> Unit
     ) {
 
+        /**Consent Info*/
+        consentInfo = UserMessagingPlatform.getConsentInformation(activity)
+
         /** Consent Request Builder */
         val consentRequest = ConsentRequestParameters.Builder()
             .apply {
-                if (debugMode) {
+                if (debugMode){
                     val debugSettings = ConsentDebugSettings.Builder(activity)
                         .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                        .addTestDeviceHashedId("39QDt7fVWUuPqLsPDAF3XkuDQEKiZkxN9z")
                         .build()
                     setConsentDebugSettings(debugSettings)
                 }
             }
             .build()
 
-        /**Consent Info*/
-        consentInfo = UserMessagingPlatform.getConsentInformation(activity)
-
         /** Request Consent */
-        Log.d(TAG, "initConsentInfo: Consent info gathering started.")
         consentInfo.requestConsentInfoUpdate(
             activity,
             consentRequest,
@@ -61,11 +70,10 @@ class GoogleConsentManager@Inject constructor(
 
                 Log.d(TAG, "initConsentInfo: Consent info gathered Success.")
 
-                if (consentInfo.canRequestAds()) {
+                if (canRequestAds) {
                     //handle ads initialization
                     Log.d(TAG, "initConsentInfo: Yes can request Ads first check.")
-                    shouldCheckCanRequestAds = false
-                    initializeAds(onAdsInitialized)
+                    initializeAds(activity.applicationContext, onAdsInitialized)
                 }
 
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
@@ -74,12 +82,24 @@ class GoogleConsentManager@Inject constructor(
                         val errorMessage = formError.message
                         Log.d(TAG, "initConsentInfo: Consent form Error -> $errorMessage")
                         onError(errorMessage)
-                    } else {
-                        //handle ads initialization
-                        Log.d(TAG, "initConsentInfo: Consent form Success.")
-                        if (shouldCheckCanRequestAds) {
-                            Log.d(TAG, "initConsentInfo: Yes can request Ads second check.")
-                            initializeAds(onAdsInitialized)
+                        return@loadAndShowConsentFormIfRequired
+                    }
+                    when(consentInfo.consentStatus){
+                        ConsentInformation.ConsentStatus.OBTAINED->{
+                            Log.d(TAG, "initConsentInfo: Consent form obtained.")
+                            //handle ads initialization
+                            if (canRequestAds){
+                                initializeAds(activity.applicationContext, onAdsInitialized)
+                            }
+                        }
+                        ConsentInformation.ConsentStatus.REQUIRED->{
+                            Log.d(TAG, "initConsentInfo: Consent form required.")
+                        }
+                        ConsentInformation.ConsentStatus.NOT_REQUIRED->{
+                            Log.d(TAG, "initConsentInfo: Consent form not required.")
+                        }
+                        ConsentInformation.ConsentStatus.UNKNOWN->{
+                            Log.d(TAG, "initConsentInfo: Consent form unknown.")
                         }
                     }
                 }
@@ -93,13 +113,37 @@ class GoogleConsentManager@Inject constructor(
     }
 
     private fun initializeAds(
+        context: Context,
         onAdsInitialized: () -> Unit,
     ) {
-        MobileAds.initialize(context) {
-            //load required ads
-            Log.d(TAG, "initializeAds: Ads Initialized")
-            onAdsInitialized()
+        if (shouldCheckCanRequestAds.getAndSet(false)) {
+            CoroutineScope(Dispatchers.IO).launch {
+                MobileAds.initialize(context){initializationStatus->
+
+                    //google ads initialization check
+                    val statusMap = initializationStatus.adapterStatusMap
+                    val googleAdsStatus = statusMap["com.google.android.gms.ads.MobileAds"]
+
+                    googleAdsStatus?.let { status ->
+                        when (status.initializationState) {
+                            AdapterStatus.State.READY -> {
+                                Log.d(TAG, "Google Mobile Ads adapter is READY")
+                            }
+                            AdapterStatus.State.NOT_READY -> {
+                                Log.d(TAG, "Google Mobile Ads adapter is NOT_READY")
+                            }
+                        }
+                        Log.d(TAG, "Description: ${status.description}")
+                        Log.d(TAG, "Latency: ${status.latency}ms")
+                    }
+
+                }
+                Log.d(TAG, "initializeAds: Ads Initialized")
+                withContext(Dispatchers.Main) { onAdsInitialized() }
+            }
+            return
         }
+        Log.d(TAG, "initializeAds: Ads Already Initialized (second check)")
     }
 
     fun showPrivacyOptionForm(activity: Activity){
